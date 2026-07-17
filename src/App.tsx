@@ -1,15 +1,40 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EventData, Person, Session } from './types';
 import { loadData, saveData, uid } from './storage';
 import './App.css';
 
+const emptyData: EventData = {
+  name: 'My 3-Day Event',
+  days: 3,
+  people: [],
+  sessions: [],
+};
+
 function App() {
-  const [data, setData] = useState<EventData>(() => loadData());
+  const [data, setData] = useState<EventData>(emptyData);
+  const [loading, setLoading] = useState(true);
   const [activeDay, setActiveDay] = useState(1);
+  // Skip the save that would otherwise fire right after the initial load.
+  const loadedRef = useRef(false);
 
   useEffect(() => {
-    saveData(data);
-  }, [data]);
+    loadData().then((loaded) => {
+      setData(loaded);
+      setLoading(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!loadedRef.current) {
+      loadedRef.current = !loading;
+      return;
+    }
+    // Debounce writes so rapid edits collapse into a single save.
+    const t = setTimeout(() => {
+      saveData(data);
+    }, 500);
+    return () => clearTimeout(t);
+  }, [data, loading]);
 
   const daySessions = useMemo(
     () => data.sessions.filter((s) => s.day === activeDay),
@@ -68,6 +93,14 @@ function App() {
 
   function removeSession(id: string) {
     update({ sessions: data.sessions.filter((s) => s.id !== id) });
+  }
+
+  if (loading) {
+    return (
+      <div className="app">
+        <p className="empty">Loading event…</p>
+      </div>
+    );
   }
 
   return (
