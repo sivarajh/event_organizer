@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { EventData, Person, Session } from './types';
+import type { EventData, Person, Session, Venue } from './types';
 import { loadData, saveData, uid } from './storage';
+import { VenueSearch } from './VenueSearch';
 import './App.css';
 
 const emptyData: EventData = {
@@ -170,6 +171,11 @@ function App() {
           onRemove={removePerson}
         />
       </main>
+
+      <VenueSearch
+        venue={data.venue}
+        onSelect={(venue: Venue | null) => update({ venue })}
+      />
     </div>
   );
 }
